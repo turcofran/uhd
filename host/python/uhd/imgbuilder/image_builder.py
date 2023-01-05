@@ -956,6 +956,7 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
                    target: The target to build (leave empty for default).
                    clean_all: passed to Makefile
                    GUI: passed to Makefile
+                   SAVE: passed to Makefile
                    source: The source of the build (YAML or GRC file path)
                    include_paths: List of paths to OOT modules
                    extra_makefile_srcs: An additional list of paths to modules
@@ -990,6 +991,8 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
         make_cmd += " RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
     if "GUI" in args and args["GUI"]:
         make_cmd = make_cmd + " GUI=1"
+    if "SAVE" in args and args["SAVE"]:
+        make_cmd = make_cmd + " SAVE=1"
     logging.info("Launching build with the following settings:")
     logging.info(" * Build Directory: %s", build_dir)
     logging.info(" * Target: %s", target)
@@ -1090,6 +1093,7 @@ def build_image(config, fpga_path, config_path, device, **args):
                    generate_only: Do not build the code after generation.
                    clean_all: passed to Makefile
                    GUI: passed to Makefile
+                   SAVE: passed to Makefile
                    include_paths: Paths to additional blocks
     :return: Exit result of build process or 0 if generate-only is given.
     """
