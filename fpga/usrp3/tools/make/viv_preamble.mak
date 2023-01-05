@@ -50,6 +50,15 @@ VIVADO_MODE=batch
 endif
 
 # -------------------------------------------------------------------
+# GUI Mode switch. Calling with GUI:=1 will launch Vivado GUI for build
+# -------------------------------------------------------------------
+ifeq ($(SAVE),1)
+VIVADO_SAVE=1
+else
+VIVADO_SAVE=0
+endif
+
+# -------------------------------------------------------------------
 # Toolchain dependency target
 # -------------------------------------------------------------------
 .check_tool:
