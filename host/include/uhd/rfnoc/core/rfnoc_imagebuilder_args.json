@@ -21,7 +21,7 @@
     "required":             ["schema",
                              "chdr_width",
                              "noc_blocks"],
-    "additionalProperties": false,
+    "additionalProperties": true,
 
     "definitions": {
 
