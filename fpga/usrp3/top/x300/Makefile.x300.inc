@@ -133,4 +133,6 @@ synth: .prereqs $$(DESIGN_SRCS) ip
 rtl: .prereqs $$(DESIGN_SRCS) ip
 	$(call CHECK_VIVADO_DESIGN,$(TOOLS_DIR)/scripts/viv_check_syntax.tcl,$(TOP_MODULE),$(ARCH),$(PART_ID))
 
+ip-only: .prereqs $$(DESIGN_SRCS) ip
+
 .PHONY: bin rtl

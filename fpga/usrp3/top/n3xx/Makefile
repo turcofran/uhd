@@ -47,6 +47,8 @@ ifndef TARGET
 		TARGET = rtl
 	else ifdef SYNTH
 		TARGET = synth
+	else ifdef IPONLY
+		TARGET = ip-only
 	else
 		TARGET = bin
 	endif
@@ -192,7 +194,8 @@ help:     ##Show this help message.
 ##GUI=1        Launch the build in the Vivado GUI.
 ##CHECK=1      Launch the syntax checker instead of building a bitfile.
 ##SYNTH=1      Launch the build but stop after synthesis.
-##SAVE=1       Save Vivado project, otherwise it's created in memory
+##IPONLY=1     Launch the build of the required IPs only.
+##SAVE=1       Save Vivado project, otherwise it's created in memory.
 ##TOP=<module> Specify a top module for syntax checking. (Optional. Default is the bitfile top)
 
 .PHONY: all clean cleanall help
