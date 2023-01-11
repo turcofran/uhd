@@ -101,6 +101,10 @@ def setup_parser():
         help="Save Vivado project to disk",
         action="store_true")
     parser.add_argument(
+        "-P", "--IP-ONLY",
+        help="Build only the required IPs",
+        action="store_true")
+    parser.add_argument(
         "-c", "--clean-all",
         help="Cleans the IP before a new build",
         action="store_true")
@@ -231,6 +235,7 @@ def main():
         clean_all=args.clean_all,
         GUI=args.GUI,
         SAVE=args.SAVE,
+        IPONLY=args.IP_ONLY,
         source=source,
         source_hash=source_hash.hexdigest(),
         output_path=args.image_core_output,
