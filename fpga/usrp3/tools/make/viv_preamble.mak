@@ -50,7 +50,7 @@ VIVADO_MODE=batch
 endif
 
 # -------------------------------------------------------------------
-# GUI Mode switch. Calling with GUI:=1 will launch Vivado GUI for build
+# Save Vivado project, otherwise created in memory
 # -------------------------------------------------------------------
 ifeq ($(SAVE),1)
 VIVADO_SAVE=1
