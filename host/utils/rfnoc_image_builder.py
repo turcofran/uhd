@@ -109,6 +109,12 @@ def setup_parser():
         help="Cleans the IP before a new build",
         action="store_true")
     parser.add_argument(
+        "-C", "--custom-build-directory",
+        help="Path to custom bitstream building directory. "
+             "Defaults to the device directory of the FPGA source tree",
+        required=False,
+        default=None)
+    parser.add_argument(
         "-p", "--vivado-path",
         help="Path to the base install for Xilinx Vivado if not in default "
              "location (e.g., /tools/Xilinx/Vivado).",
@@ -226,6 +232,7 @@ def main():
         GUI=args.GUI,
         SAVE=args.SAVE,
         IPONLY=args.IP_ONLY,
+        custom_build_directory=args.custom_build_directory,
         source=source,
         source_hash=source_hash.hexdigest(),
         output_path=args.image_core_output,

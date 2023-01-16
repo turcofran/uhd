@@ -11,9 +11,9 @@
 ## make <Targets> <Options>
 ##
 ##Output:
-## build/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
-## build/usrp_<product>_fpga_<image_type>.dts:    Device tree source file
-## build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.dts:    Device tree source file
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
 
 # Debug Options
 # Uncomment this line or add to make arg to omit radio_clk (sourced from db) and use bus_clk as radio_clk
@@ -41,6 +41,9 @@ N300AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=$(abspath n300_bist_image_core.v)
 N310AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=$(abspath n310_bist_image_core.v) DEFAULT_EDGE_FILE=$(abspath n310_bist_static_router.hex)
 N320AA_DEFAULTS:=DEFAULT_RFNOC_IMAGE_CORE_FILE=$(abspath n320_bist_image_core.v) DEFAULT_EDGE_FILE=$(abspath n320_bist_static_router.hex)
 
+# Option to build the bitstreams in different directories. Then passed to viv_preamble.mak as "O" (cap letter) via Makefile.<dev>.mak
+CUSTOM_BUILD_DIR ?= .
+
 # Set build option (check RTL, run synthesis, or do a full build)
 ifndef TARGET
 	ifdef CHECK
@@ -59,16 +62,16 @@ TOP ?= n3xx
 # Device: N300, N310, or N320
 # Definitions: See above (*_DEFS)
 # Defaults: See above (*_DEFAULTS)
-vivado_build = make -f Makefile.n3xx.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" $3
+vivado_build = make -f Makefile.n3xx.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" $3 O=$(CUSTOM_BUILD_DIR)
 
 # post_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
 	post_build = @\
-		mkdir -p build; \
+		mkdir -p $(CUSTOM_BUILD_DIR)/build; \
 		echo "Exporting bitstream file..."; \
-		cp build-$(1)_$(2)/n3xx.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(CUSTOM_BUILD_DIR)/build-$(1)_$(2)/n3xx.bit $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
 		echo "Exporting build report..."; \
-		cp build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(CUSTOM_BUILD_DIR)/build-$(1)_$(2)/build.rpt $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -81,109 +84,109 @@ endif
 all:      N300_HG N300_XG N310_HG N310_XG N320_HG N320_XG ##(Default target)
 
 ##N310_WX:  1GigE White Rabbit on SFP+ Port0, 10Gig on SFP+ Port1.
-N310_WX:  build/usrp_n310_fpga_WX.dts
+N310_WX:  $(CUSTOM_BUILD_DIR)/build/usrp_n310_fpga_WX.dts
 	$(call vivado_build,N310,$(WX_DEFS) N310=1,$(N310_DEFAULTS))
 	$(call post_build,N310,WX)
 
 ##N310_HG:  1GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N310_HG:  build/usrp_n310_fpga_HG.dts
+N310_HG:  $(CUSTOM_BUILD_DIR)/build/usrp_n310_fpga_HG.dts
 	$(call vivado_build,N310,$(HG_DEFS) N310=1,$(N310_DEFAULTS))
 	$(call post_build,N310,HG)
 
 ##N310_XG:  10GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N310_XG: build/usrp_n310_fpga_XG.dts
+N310_XG: $(CUSTOM_BUILD_DIR)/build/usrp_n310_fpga_XG.dts
 	$(call vivado_build,N310,$(XG_DEFS) N310=1,$(N310_DEFAULTS))
 	$(call post_build,N310,XG)
 
 ##N310_HA:  1Gig on SFP+ Port0, Aurora on SFP+ Port1.
-N310_HA: build/usrp_n310_fpga_HA.dts
+N310_HA: $(CUSTOM_BUILD_DIR)/build/usrp_n310_fpga_HA.dts
 	$(call vivado_build,N310,$(HA_DEFS) N310=1,$(N310_DEFAULTS))
 	$(call post_build,N310,HA)
 
 ##N310_XA:  10Gig on SFP+ Port0, Aurora on SFP+ Port1.
-N310_XA: build/usrp_n310_fpga_XA.dts
+N310_XA: $(CUSTOM_BUILD_DIR)/build/usrp_n310_fpga_XA.dts
 	$(call vivado_build,N310,$(XA_DEFS) N310=1,$(N310_DEFAULTS))
 	$(call post_build,N310,XA)
 
 ##N310_AA:  Aurora on SFP+ Port0, Aurora on SFP+ Port1.
-N310_AA: build/usrp_n310_fpga_AA.dts
+N310_AA: $(CUSTOM_BUILD_DIR)/build/usrp_n310_fpga_AA.dts
 	$(call vivado_build,N310,$(AA_DEFS) N310=1,$(N310AA_DEFAULTS))
 	$(call post_build,N310,AA)
 
 ##N300_WX:  1GigE White Rabbit on SFP+ Port0, 10Gig on SFP+ Port1.
-N300_WX:  build/usrp_n300_fpga_WX.dts
+N300_WX:  $(CUSTOM_BUILD_DIR)/build/usrp_n300_fpga_WX.dts
 	$(call vivado_build,N300,$(WX_DEFS) N300=1,$(N300_DEFAULTS))
 	$(call post_build,N300,WX)
 
 ##N300_HG:  1GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N300_HG:  build/usrp_n300_fpga_HG.dts
+N300_HG:  $(CUSTOM_BUILD_DIR)/build/usrp_n300_fpga_HG.dts
 	$(call vivado_build,N300,$(HG_DEFS) N300=1,$(N300_DEFAULTS))
 	$(call post_build,N300,HG)
 
 ##N300_XG:  10GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N300_XG: build/usrp_n300_fpga_XG.dts
+N300_XG: $(CUSTOM_BUILD_DIR)/build/usrp_n300_fpga_XG.dts
 	$(call vivado_build,N300,$(XG_DEFS) N300=1,$(N300_DEFAULTS))
 	$(call post_build,N300,XG)
 
 ##N300_HA:  1Gig on SFP+ Port0, Aurora on SFP+ Port1.
-N300_HA: build/usrp_n300_fpga_HA.dts
+N300_HA: $(CUSTOM_BUILD_DIR)/build/usrp_n300_fpga_HA.dts
 	$(call vivado_build,N300,$(HA_DEFS) N300=1,$(N300_DEFAULTS))
 	$(call post_build,N300,HA)
 
 ##N300_XA:  10Gig on SFP+ Port0, Aurora on SFP+ Port1.
-N300_XA: build/usrp_n300_fpga_XA.dts
+N300_XA: $(CUSTOM_BUILD_DIR)/build/usrp_n300_fpga_XA.dts
 	$(call vivado_build,N300,$(XA_DEFS) N300=1,$(N300_DEFAULTS))
 	$(call post_build,N300,XA)
 
 ##N300_AA:  Aurora on SFP+ Port0, Aurora on SFP+ Port1.
-N300_AA: build/usrp_n300_fpga_AA.dts
+N300_AA: $(CUSTOM_BUILD_DIR)/build/usrp_n300_fpga_AA.dts
 	$(call vivado_build,N300,$(AA_DEFS) N300=1,$(N300AA_DEFAULTS))
 	$(call post_build,N300,AA)
 
 ##N320_WX:  1GigE White Rabbit on SFP+ Port0, 10Gig on SFP+ Port1.
-N320_WX:  build/usrp_n320_fpga_WX.dts
+N320_WX:  $(CUSTOM_BUILD_DIR)/build/usrp_n320_fpga_WX.dts
 	$(call vivado_build,N320,$(WX_DEFS) N320=1,$(N320_DEFAULTS))
 	$(call post_build,N320,WX)
 
 ##N320_HG:  1GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N320_HG: build/usrp_n320_fpga_HG.dts
+N320_HG: $(CUSTOM_BUILD_DIR)/build/usrp_n320_fpga_HG.dts
 	$(call vivado_build,N320,$(HG_DEFS) N320=1,$(N320_DEFAULTS))
 	$(call post_build,N320,HG)
 
 ##N320_XG:  10GigE on SFP+ Port0, 10Gig on SFP+ Port1.
-N320_XG: build/usrp_n320_fpga_XG.dts
+N320_XG: $(CUSTOM_BUILD_DIR)/build/usrp_n320_fpga_XG.dts
 	$(call vivado_build,N320,$(XG_DEFS) N320=1,$(N320_DEFAULTS))
 	$(call post_build,N320,XG)
 
 ##N320_XQ:  WR on SFP+ Port0, 10Gig on QSFP+ Port0,1.
-N320_XQ: build/usrp_n320_fpga_XQ.dts
+N320_XQ: $(CUSTOM_BUILD_DIR)/build/usrp_n320_fpga_XQ.dts
 	$(call vivado_build,N320,$(XQ_DEFS) N320=1,$(N320_DEFAULTS))
 	$(call post_build,N320,XQ)
 
 ##N320_AQ:  10Gig on SFP+ Port0,1 Aurora on QSFP+ Port0,1,2,3.
-N320_AQ: build/usrp_n320_fpga_AQ.dts
+N320_AQ: $(CUSTOM_BUILD_DIR)/build/usrp_n320_fpga_AQ.dts
 	$(call vivado_build,N320,$(AQ_DEFS) N320=1,$(N320_DEFAULTS))
 	$(call post_build,N320,AQ)
 
 ##N320_AA:  Aurora on SFP+ Port0, Aurora on SFP+ Port1.
-N320_AA: build/usrp_n320_fpga_AA.dts
+N320_AA: $(CUSTOM_BUILD_DIR)/build/usrp_n320_fpga_AA.dts
 	$(call vivado_build,N320,$(AA_DEFS) N320=1,$(N320AA_DEFAULTS))
 	$(call post_build,N320,AA)
 
-build/%.dts: dts/%.dts dts/*.dtsi
-	-mkdir -p build
+$(CUSTOM_BUILD_DIR)/build/%.dts: dts/%.dts dts/*.dtsi
+	-mkdir -p $(CUSTOM_BUILD_DIR)/build
 	${CC} -o $@ -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ $<
 
 clean:    ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf build-N3*_*
-	@rm -rf build
+	@rm -rf $(CUSTOM_BUILD_DIR)/build-N3*_*
+	@rm -rf $(CUSTOM_BUILD_DIR)/build
 
 cleanall: ##Clean up all target and ip build outputs.
 	@echo "Cleaning targets and IP..."
 	@rm -rf build-ip
-	@rm -rf build-N3*_*
-	@rm -rf build
+	@rm -rf $(CUSTOM_BUILD_DIR)/build-N3*_*
+	@rm -rf $(CUSTOM_BUILD_DIR)/build
 
 help:     ##Show this help message.
 	@grep -h "##" Makefile | grep -v "\"##\"" | sed -e 's/\\$$//' | sed -e 's/##//'
@@ -196,6 +199,7 @@ help:     ##Show this help message.
 ##SYNTH=1      Launch the build but stop after synthesis.
 ##IPONLY=1     Launch the build of the required IPs only.
 ##SAVE=1       Save Vivado project, otherwise it's created in memory.
+##CUSTOM_BUILD_DIR=<path>     Path to custom bitstream building directory
 ##TOP=<module> Specify a top module for syntax checking. (Optional. Default is the bitfile top)
 
 .PHONY: all clean cleanall help

@@ -10,9 +10,12 @@
 ## make <Targets> <Options>
 ##
 ##Output:
-## build/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
-## build/usrp_<product>_fpga_<image_type>.dts:    Device tree source file
-## build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.dts:    Device tree source file
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
+
+# Option to build the bitstreams in different directories. Then passed to viv_preamble.mak as "O" (cap letter) via Makefile.<dev>.mak
+CUSTOM_BUILD_DIR ?= .
 
 # Set build option (check RTL, run synthesis, or do a full build)
 ifndef TARGET
@@ -32,16 +35,16 @@ DEFAULT_IMAGE_CORE_FILE_E31X=e310_rfnoc_image_core.v
 DEFAULT_EDGE_FILE_E31X=$(abspath e310_static_router.hex)
 
 # vivado_build($1=Device, $2=Definitions)
-vivado_build = make -f Makefile.e31x.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_E31X) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_E31X)
+vivado_build = make -f Makefile.e31x.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_E31X) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_E31X) O=$(CUSTOM_BUILD_DIR)
 
 # post_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
 	post_build = @\
-		mkdir -p build; \
+		mkdir -p $(CUSTOM_BUILD_DIR)/build; \
 		echo "Exporting bitstream file..."; \
-		cp build-$(1)/e31x.bit build/usrp_`echo $(2) | tr A-Z a-z`_fpga.bit; \
+		cp $(CUSTOM_BUILD_DIR)/build-$(1)/e31x.bit $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(2) | tr A-Z a-z`_fpga.bit; \
 		echo "Exporting build report..."; \
-		cp build-$(1)/build.rpt build/usrp_`echo $(2) | tr A-Z a-z`_fpga.rpt; \
+		cp $(CUSTOM_BUILD_DIR)/build-$(1)/build.rpt $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(2) | tr A-Z a-z`_fpga.rpt; \
 		echo "Build DONE ... $(1)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -54,40 +57,40 @@ endif
 all:            E310_SG1_IDLE E310_SG3_IDLE E310_SG1 E310_SG3 E310_SG1_RFNOC E310_SG3_RFNOC ##(Default target)
 
 ##E310_SG1_IDLE:  Build USRP E3XX idle design (Speed Grade 1).
-E310_SG1_IDLE E3XX_idle:  build/usrp_e310_sg1_idle_fpga.dts
+E310_SG1_IDLE E3XX_idle:  $(CUSTOM_BUILD_DIR)/build/usrp_e310_sg1_idle_fpga.dts
 	$(call vivado_build,E310_SG1, E310_IDLE_IMAGE=1 E310_SG1=1)
 	$(call post_build,$@,E310_SG1_IDLE)
 
 ##E310_SG3_IDLE:  Build USRP E3XX idle design (Speed Grade 3).
-E310_SG3_IDLE E3XX_idle_sg3:  build/usrp_e310_sg3_idle_fpga.dts
+E310_SG3_IDLE E3XX_idle_sg3:  $(CUSTOM_BUILD_DIR)/build/usrp_e310_sg3_idle_fpga.dts
 	$(call vivado_build,E310_SG3, E310_IDLE_IMAGE=1 E310_SG3=1)
 	$(call post_build,$@,E310_SG3_IDLE)
 
 ##E310_SG1:       Build USRP E3XX (Speed Grade 1).
-E310_SG1 E310:  build/usrp_e310_sg1_fpga.dts
+E310_SG1 E310:  $(CUSTOM_BUILD_DIR)/build/usrp_e310_sg1_fpga.dts
 	$(call vivado_build,E310_SG1, E310_SG1=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@,E310_SG1)
 
 ##E310_SG3:       Build USRP E3XX (Speed Grade 3).
-E310_SG3 E310_sg3:  build/usrp_e310_sg3_fpga.dts
+E310_SG3 E310_sg3:  $(CUSTOM_BUILD_DIR)/build/usrp_e310_sg3_fpga.dts
 	$(call vivado_build,E310_SG3, E310_SG3=1 $(if $(DRAM),ENABLE_DRAM=1,))
 	$(call post_build,$@,E310_SG3)
 
 
-build/%.dts: dts/%.dts dts/*.dtsi
-	-mkdir -p build
+$(CUSTOM_BUILD_DIR)/build/%.dts: dts/%.dts dts/*.dtsi
+	-mkdir -p $(CUSTOM_BUILD_DIR)/build
 	${CC} -o $@ -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ $<
 
 clean:          ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf build-E3*
-	@rm -rf build
+	@rm -rf $(CUSTOM_BUILD_DIR)/build-E3*
+	@rm -rf $(CUSTOM_BUILD_DIR)/build
 
 cleanall:       ##Clean up all target and ip build outputs.
 	@echo "Cleaning targets and IP..."
 	@rm -rf build-ip
-	@rm -rf build-E3*
-	@rm -rf build
+	@rm -rf $(CUSTOM_BUILD_DIR)/build-E3*
+	@rm -rf $(CUSTOM_BUILD_DIR)/build
 
 help:           ##Show this help message.
 	@grep -h "##" Makefile | grep -v "\"##\"" | sed -e 's/\\$$//' | sed -e 's/##//'
@@ -102,6 +105,7 @@ help:           ##Show this help message.
 ##SYNTH=1      Launch the build but stop after synthesis.
 ##IPONLY=1     Launch the build of the required IPs only.
 ##SAVE=1       Save Vivado project, otherwise it's created in memory.
+##CUSTOM_BUILD_DIR=<path>     Path to custom bitstream building directory
 ##TOP=<module> Specify a top module for syntax checking. (Optional. Default is the bitfile top)
 
 .PHONY: all clean cleanall help

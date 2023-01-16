@@ -10,10 +10,10 @@
 ## make <Targets> <Options>
 ##
 ##Output:
-## build/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
-## build/usrp_<product>_fpga_<image_type>.bin:    Configuration bitstream without header
-## build/usrp_<product>_fpga_<image_type>.lvbitx: Configuration bitstream for PCIe (NI-RIO)
-## build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.bin:    Configuration bitstream without header
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.lvbitx: Configuration bitstream for PCIe (NI-RIO)
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
 
 # Debug Options
 # Uncomment the following line to add a debug UART on GPIO 10 & 11
@@ -26,6 +26,9 @@ HG_DEFS=BUILD_1G=1 BUILD_10G=1 SFP0_1GBE=1 SFP1_10GBE=1 $(OPTIONS)
 XG_DEFS=BUILD_10G=1 SFP0_10GBE=1 SFP1_10GBE=1 $(OPTIONS)
 HA_DEFS=BUILD_1G=1 BUILD_AURORA=1 SFP0_1GBE=1 SFP1_AURORA=1 $(OPTIONS)
 XA_DEFS=BUILD_10G=1 BUILD_AURORA=1 SFP0_10GBE=1 SFP1_AURORA=1 $(OPTIONS)
+
+# Option to build the bitstreams in different directories. Then passed to viv_preamble.mak as "O" (cap letter) via Makefile.<dev>.mak
+CUSTOM_BUILD_DIR ?= .
 
 # Set build option (check RTL, run synthesis, or do a full build)
 ifndef TARGET
@@ -47,20 +50,20 @@ DEFAULT_EDGE_FILE_X300=$(abspath x300_static_router.hex)
 DEFAULT_EDGE_FILE_X310=$(abspath x310_static_router.hex)
 
 # vivado_build($1=Device, $2=Definitions)
-vivado_build = make -f Makefile.x300.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_$1) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_$1)
+vivado_build = make -f Makefile.x300.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" DEFAULT_RFNOC_IMAGE_CORE_FILE=$(DEFAULT_IMAGE_CORE_FILE_$1) DEFAULT_EDGE_FILE=$(DEFAULT_EDGE_FILE_$1) O=$(CUSTOM_BUILD_DIR)
 
 # post_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
 	post_build = @\
-		mkdir -p build; \
+		mkdir -p $(CUSTOM_BUILD_DIR)/build; \
 		echo "Exporting bitstream files..."; \
-		cp build-$(1)_$(2)/x300.bin build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bin; \
-		cp build-$(1)_$(2)/x300.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(CUSTOM_BUILD_DIR)/build-$(1)_$(2)/x300.bin $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bin; \
+		cp $(CUSTOM_BUILD_DIR)/build-$(1)_$(2)/x300.bit $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
 		echo "Generating LVBITX..."; \
-		$(CREATE_LVBITX) --input-bin=build-$(1)_$(2)/x300.bin --output-lvbitx=build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).lvbitx --device="USRP $(1)" x3x0_base.lvbitx; \
-		cp -f x3x0_base.lvbitx build/`echo $(1) | tr A-Z a-z`.lvbitx_base; \
+		$(CREATE_LVBITX) --input-bin=$(CUSTOM_BUILD_DIR)/build-$(1)_$(2)/x300.bin --output-lvbitx=$(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).lvbitx --device="USRP $(1)" x3x0_base.lvbitx; \
+		cp -f x3x0_base.lvbitx $(CUSTOM_BUILD_DIR)/build/`echo $(1) | tr A-Z a-z`.lvbitx_base; \
 		echo "Exporting build report..."; \
-		cp build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(CUSTOM_BUILD_DIR)/build-$(1)_$(2)/build.rpt $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -124,14 +127,14 @@ X300_XA:
 
 clean:    ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf build-X3*_*
-	@rm -rf build
+	@rm -rf $(CUSTOM_BUILD_DIR)/build-X3*_*
+	@rm -rf $(CUSTOM_BUILD_DIR)/build
 
 cleanall: ##Clean up all target and ip build outputs.
 	@echo "Cleaning targets and IP..."
 	@rm -rf build-ip
-	@rm -rf build-X3*_*
-	@rm -rf build
+	@rm -rf $(CUSTOM_BUILD_DIR)/build-X3*_*
+	@rm -rf $(CUSTOM_BUILD_DIR)/build
 
 help:     ##Show this help message.
 	@grep -h "##" Makefile | grep -v "\"##\"" | sed -e 's/\\$$//' | sed -e 's/##//'
@@ -144,6 +147,7 @@ help:     ##Show this help message.
 ##SYNTH=1      Launch the build but stop after synthesis.
 ##IPONLY=1     Launch the build of the required IPs only.
 ##SAVE=1       Save Vivado project, otherwise it's created in memory.
+##CUSTOM_BUILD_DIR=<path>     Path to custom bitstream building directory
 ##TOP=<module> Specify a top module for syntax checking. (Optional. Default is the bitfile top)
 
 .PHONY: all clean cleanall help
