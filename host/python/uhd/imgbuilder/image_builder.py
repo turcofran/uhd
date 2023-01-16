@@ -958,6 +958,7 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
                    GUI: passed to Makefile
                    SAVE: passed to Makefile
                    IPONLY: passed to Makefile
+                   custom_build_directory: Custom bitstream building directory
                    source: The source of the build (YAML or GRC file path)
                    include_paths: List of paths to OOT modules
                    extra_makefile_srcs: An additional list of paths to modules
@@ -968,6 +969,7 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
     ret_val = 0
     cwd = os.path.dirname(__file__)
     build_dir = os.path.join(get_top_path(os.path.abspath(fpga_path)), target_dir(device))
+    bitstream_build_dir = build_dir
     if not os.path.isdir(build_dir):
         logging.error("Not a valid directory: %s", build_dir)
         return 1
@@ -996,8 +998,12 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
         make_cmd = make_cmd + " SAVE=1"
     if "IPONLY" in args and args["IPONLY"]:
         make_cmd = make_cmd + " IPONLY=1"
+    if "custom_build_directory" in args and args["custom_build_directory"]:
+        make_cmd = make_cmd + " CUSTOM_BUILD_DIR="+args["custom_build_directory"]
+        bitstream_build_dir = args["custom_build_directory"]
     logging.info("Launching build with the following settings:")
     logging.info(" * Build Directory: %s", build_dir)
+    logging.info(" * Bitstream build Directory: %s", bitstream_build_dir)
     logging.info(" * Target: %s", target)
     logging.info(" * Image Core File: %s", image_core_path)
     logging.info(" * Edge Table File: %s", edge_file)
@@ -1098,6 +1104,7 @@ def build_image(config, fpga_path, config_path, device, **args):
                    GUI: passed to Makefile
                    SAVE: passed to Makefile
                    IPONLY: passed to Makefile
+                   custom_build_directory: Custom bitstream building directory
                    include_paths: Paths to additional blocks
     :return: Exit result of build process or 0 if generate-only is given.
     """
