@@ -12,12 +12,14 @@
 ##  make <Targets> <Options>
 ##
 ##Output:
-##  build/usrp_<product>_fpga_<image_type>.bit:  Configuration bitstream with header
-##  build/usrp_<product>_fpga_<image_type>.dts:  Device tree source file
-##  build/usrp_<product>_fpga_<image_type>.rpt:  Build report (includes utilization and timing summary)
+##  $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.bit:  Configuration bitstream with header
+##  $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.dts:  Device tree source file
+##  $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.rpt:  Build report (includes utilization and timing summary)
 
-# Base output directory for all builds
-BUILD_BASE_DIR ?= .
+# Option to build and output the bitstreams in different directories. It's complementary to the BUILD_BASE_DIR option
+CUSTOM_BUILD_DIR ?= .
+# Base output directory for all builds.
+BUILD_BASE_DIR ?= $(CUSTOM_BUILD_DIR)
 
 # Definitions
 # MGT Types from x4xx_mgt_type.vh
@@ -80,7 +82,6 @@ X410_CG_200_DEFAULTS  := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_cg_200_rfnoc_image_c
 X410_400_DEFAULTS     := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_400_rfnoc_image_core.v     DEFAULT_EDGE_FILE=$(abspath x410_400_static_router.hex)
 X410_400_128_DEFAULTS := DEFAULT_RFNOC_IMAGE_CORE_FILE=x410_400_128_rfnoc_image_core.v DEFAULT_EDGE_FILE=$(abspath x410_400_128_static_router.hex)
 
-
 # Option to stop after RTL elaboration. Use this flag as a synthesis check.
 ifndef TARGET
 	ifdef CHECK
@@ -102,11 +103,11 @@ vivado_ip    = make -f Makefile.x4xx.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) P
 # vivado_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
 	post_build = @\
-		mkdir -p build; \
+		mkdir -p $(CUSTOM_BUILD_DIR)/build; \
 		echo "Exporting bitstream file..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x4xx.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x4xx.bit $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
 		echo "Exporting build report..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -138,75 +139,75 @@ endif
 ##* Note: Not all targets are shipped with UHD.
 ##* Note: Some YAML configurations might not use all available DRAM channels.
 
-X410_X1_100: X410_IP build/usrp_x410_fpga_X1_100.dts
+X410_X1_100: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_X1_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X1_100)
 
-X410_XG_100: X410_IP build/usrp_x410_fpga_XG_100.dts
+X410_XG_100: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_XG_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,XG_100)
 
-X410_X4_100: X410_IP build/usrp_x410_fpga_X4_100.dts
+X410_X4_100: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_X4_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X4_100)
 
-X410_X4C_100: X410_IP build/usrp_x410_fpga_X4C_100.dts
+X410_X4C_100: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_X4C_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_X4C_200_DEFAULTS))
 	$(call post_build,X410,X4C_100)
 
-X410_C1_100: X410_IP build/usrp_x410_fpga_C1_100.dts
+X410_C1_100: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_C1_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
 	$(call post_build,X410,C1_100)
 
-X410_UC_100: X410_IP build/usrp_x410_fpga_UC_100.dts
+X410_UC_100: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_UC_100.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
 	$(call post_build,X410,UC_100)
 
-X410_X1_200: X410_IP build/usrp_x410_fpga_X1_200.dts
+X410_X1_200: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_X1_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X1_200)
 
-X410_XG_200: X410_IP build/usrp_x410_fpga_XG_200.dts
+X410_XG_200: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_XG_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,XG_200)
 
-X410_X4_200: X410_IP build/usrp_x410_fpga_X4_200.dts
+X410_X4_200: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_X4_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_200_DEFAULTS))
 	$(call post_build,X410,X4_200)
 
-X410_X4C_200: X410_IP build/usrp_x410_fpga_X4C_200.dts
+X410_X4C_200: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_X4C_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_X4C_200_DEFAULTS))
 	$(call post_build,X410,X4C_200)
 
-X410_C1_200: X410_IP build/usrp_x410_fpga_C1_200.dts
+X410_C1_200: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_C1_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
 	$(call post_build,X410,C1_200)
 
-X410_UC_200: X410_IP build/usrp_x410_fpga_UC_200.dts
+X410_UC_200: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_UC_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
 	$(call post_build,X410,UC_200)
 
-X410_X1_400: X410_IP build/usrp_x410_fpga_X1_400.dts
+X410_X1_400: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_X1_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_128_DEFAULTS))
 	$(call post_build,X410,X1_400)
 
-X410_XG_400: X410_IP build/usrp_x410_fpga_XG_400.dts
+X410_XG_400: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_XG_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_128_DEFAULTS))
 	$(call post_build,X410,XG_400)
 
-X410_X4_400: X410_IP build/usrp_x410_fpga_X4_400.dts
+X410_X4_400: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_X4_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_128_DEFAULTS))
 	$(call post_build,X410,X4_400)
 
-X410_C1_400: X410_IP build/usrp_x410_fpga_C1_400.dts
+X410_C1_400: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_C1_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,C1_400)
 
-X410_UC_400: X410_IP build/usrp_x410_fpga_UC_400.dts
+X410_UC_400: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_UC_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,UC_400)
 
-X410_CG_400: X410_IP build/usrp_x410_fpga_CG_400.dts
+X410_CG_400: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_CG_400.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_400_DEFAULTS))
 	$(call post_build,X410,CG_400)
 
@@ -217,7 +218,7 @@ X410_CG_400: X410_IP build/usrp_x410_fpga_CG_400.dts
 ##-------------|-----------|-----------------|-----------------|------------
 ##X410_CG_200  | 200       | 100 GbE         | 100 GbE         | 64b x 4 Ch
 
-X410_CG_200: X410_IP build/usrp_x410_fpga_CG_200.dts
+X410_CG_200: X410_IP $(CUSTOM_BUILD_DIR)/build/usrp_x410_fpga_CG_200.dts
 	$(call vivado_build,X410,$(DEFS) X410=1,$(X410_CG_200_DEFAULTS))
 	$(call post_build,X410,CG_200)
 
@@ -232,25 +233,25 @@ all:          X410_X4_200 X410_CG_400 X410_UC_200 ##(Default targets)
 X410_IP:      ##Build IP only.
 	+$(call vivado_ip,X410,$(DEFS) X410=1)
 
-build/%.dts: dts/*.dts dts/*.dtsi
-	-mkdir -p build
+$(CUSTOM_BUILD_DIR)/build/%.dts: dts/*.dts dts/*.dtsi
+	-mkdir -p $(CUSTOM_BUILD_DIR)/build $(CUSTOM_BUILD_DIR)/dts
 	tools/parse_versions_for_dts.py \
 		--input regmap/versioning_regs_regmap_utils.vh \
-		--output dts/x410-version-info.dtsi \
+		--output $(CUSTOM_BUILD_DIR)/dts/x410-version-info.dtsi \
 		--components fpga,cpld_ifc,db_gpio_ifc,rf_core_100m,rf_core_400m
-	${CC} -o $@ -C -E -I dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ \
+	${CC} -o $@ -C -E -I $(CUSTOM_BUILD_DIR)/dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ \
 		$$(python3 tools/get_dts_input.py --target $@)
 
 clean:        ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf build-X4*
-	@rm -rf build
+	@rm -rf $(BUILD_BASE_DIR)/build-X4*
+	@rm -rf $(CUSTOM_BUILD_DIR)/build
 
 cleanall:     ##Clean up all target and IP build outputs.
 	@echo "Cleaning targets and IP..."
 	@rm -rf build-ip
-	@rm -rf build-X4*
-	@rm -rf build
+	@rm -rf $(BUILD_BASE_DIR)/build-X4*
+	@rm -rf $(CUSTOM_BUILD_DIR)/build
 
 help:         ##Show this help message.
 	@grep -h "##" Makefile | grep -v "\"##\"" | sed -e 's/\\$$//' | sed -e 's/##//'
@@ -265,6 +266,7 @@ help:         ##Show this help message.
 ##IPONLY=1       Launch the build of the required IPs only.
 ##BUILD_SEED=<N> Build seed to used to affect build results. (Default is 0)
 ##SAVE=1         Save Vivado project, otherwise it's created in memory
+##CUSTOM_BUILD_DIR=<path>     Path to custom bitstream building directory
 ##TOP=<module>   Specify a top module for syntax checking. (Default is the bitfile top)
 
 .PHONY: all clean cleanall help

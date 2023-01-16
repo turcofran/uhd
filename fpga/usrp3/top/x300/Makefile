@@ -10,10 +10,10 @@
 ## make <Targets> <Options>
 ##
 ##Output:
-## build/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
-## build/usrp_<product>_fpga_<image_type>.bin:    Configuration bitstream without header
-## build/usrp_<product>_fpga_<image_type>.lvbitx: Configuration bitstream for PCIe (NI-RIO)
-## build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.bit:    Configuration bitstream with header
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.bin:    Configuration bitstream without header
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.lvbitx: Configuration bitstream for PCIe (NI-RIO)
+## $(CUSTOM_BUILD_DIR)/build/usrp_<product>_fpga_<image_type>.rpt:    Build report (includes utilization and timing summary)
 
 # Debug Options
 # Uncomment the following line to add a debug UART on GPIO 10 & 11
@@ -21,8 +21,10 @@
 
 CREATE_LVBITX=python ../../lib/io_port2/create-lvbitx.py
 
-# Base output directory for all builds
-BUILD_BASE_DIR ?= .
+# Option to build and output the bitstreams in different directories. It's complementary to the BUILD_BASE_DIR option
+CUSTOM_BUILD_DIR ?= .
+# Base output directory for all builds.
+BUILD_BASE_DIR ?= $(CUSTOM_BUILD_DIR)
 
 # Initialize a build seed. This can be changed to randomly affect build results.
 BUILD_SEED ?= 0
@@ -59,15 +61,15 @@ vivado_ip    = make -f Makefile.x300.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) P
 # post_build($1=Device, $2=Option)
 ifeq ($(TARGET),bin)
 	post_build = @\
-		mkdir -p build; \
+		mkdir -p $(CUSTOM_BUILD_DIR)/build; \
 		echo "Exporting bitstream files..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bin; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bit build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bin; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bit $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).bit; \
 		echo "Generating LVBITX..."; \
-		$(CREATE_LVBITX) --input-bin=$(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin --output-lvbitx=build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).lvbitx --device="USRP $(1)" x3x0_base.lvbitx; \
-		cp -f x3x0_base.lvbitx build/`echo $(1) | tr A-Z a-z`.lvbitx_base; \
+		$(CREATE_LVBITX) --input-bin=$(BUILD_BASE_DIR)/build-$(1)_$(2)/x300.bin --output-lvbitx=$(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).lvbitx --device="USRP $(1)" x3x0_base.lvbitx; \
+		cp -f x3x0_base.lvbitx $(CUSTOM_BUILD_DIR)/build/`echo $(1) | tr A-Z a-z`.lvbitx_base; \
 		echo "Exporting build report..."; \
-		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
+		cp $(BUILD_BASE_DIR)/build-$(1)_$(2)/build.rpt $(CUSTOM_BUILD_DIR)/build/usrp_`echo $(1) | tr A-Z a-z`_fpga_$(2).rpt; \
 		echo "Build DONE ... $(1)_$(2)";
 else
 	post_build = @echo "Skipping bitfile export."
@@ -139,14 +141,14 @@ X300_XA: X300_IP
 
 clean:    ##Clean up all target build outputs.
 	@echo "Cleaning targets..."
-	@rm -rf build-X3*_*
-	@rm -rf build
+	@rm -rf $(BUILD_BASE_DIR)/build-X3*_*
+	@rm -rf $(CUSTOM_BUILD_DIR)/build
 
 cleanall: ##Clean up all target and ip build outputs.
 	@echo "Cleaning targets and IP..."
 	@rm -rf build-ip
-	@rm -rf build-X3*_*
-	@rm -rf build
+	@rm -rf $(BUILD_BASE_DIR)/build-X3*_*
+	@rm -rf $(CUSTOM_BUILD_DIR)/build
 
 help:     ##Show this help message.
 	@grep -h "##" Makefile | grep -v "\"##\"" | sed -e 's/\\$$//' | sed -e 's/##//'
@@ -160,6 +162,7 @@ help:     ##Show this help message.
 ##IPONLY=1       Launch the build of the required IPs only.
 ##BUILD_SEED=<N> Build seed to used to affect build results. (Default is 0)
 ##SAVE=1         Save Vivado project, otherwise it's created in memory
+##CUSTOM_BUILD_DIR=<path>     Path to custom bitstream building directory
 ##TOP=<module>   Specify a top module for syntax checking. (Default is the bitfile top)
 
 .PHONY: all clean cleanall help
