@@ -2,7 +2,7 @@
 \
 %for connection in connections:
 <%
-  src_name = connection["srcblk"] # Should always be "_device_"
+  src_name = connection["srcblk"] # Should always be "_device_" or one from user_clocks
   src = clocks[(src_name, connection["srcport"])]
   dst_name = connection["dstblk"]
   dst = clocks[(dst_name, connection["dstport"])]
