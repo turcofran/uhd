@@ -211,6 +211,7 @@ class ImageBuilderConfig:
         self.connections = []
         self.clk_domains = []
         self.block_ports = OrderedDict()
+        self.user_clocks = OrderedDict()
         self.io_ports = OrderedDict()
         self.clocks = OrderedDict()
         self.block_con = []
@@ -513,6 +514,10 @@ class ImageBuilderConfig:
                 if 'direction' not in clock:
                     clock['direction'] = 'in'
                 self.clocks[clock_id] = clock
+        # Add user clocks
+        for name, clock in self.user_clocks.items():
+            self.clocks[name + '.' + clock['port_in']] = {"freq": '[]', "name": clock['port_in']} # Only port for inputs since the wire blkname_clockname
+            self.clocks[name + '.' + clock['port_out']] = {"freq": '[]', "name": name+'_'+clock['port_out'] }
         # Collect clocks from device BSP
         for bsp_clk in getattr(self.device, 'clocks', {}):
             clock_id = "_device_." + bsp_clk["name"]
@@ -552,7 +557,7 @@ class ImageBuilderConfig:
         unconnected = []
         for clk, clk_info in self.clocks.items():
             clk_blk, clk_port = clk.split('.', 2)
-            if clk_blk != "_device_" and \
+            if clk_blk != "_device_" and clk not in self.user_clocks and\
                     clk_port not in ('rfnoc_ctrl', 'rfnoc_chdr') and \
                     clk not in connected and \
                     clk_info['direction'] == 'in':
