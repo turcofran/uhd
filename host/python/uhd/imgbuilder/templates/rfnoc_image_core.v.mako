@@ -208,6 +208,10 @@ module rfnoc_image_core #(
 
 <%include file="/modules/drive_unused_ports.v.mako" args="connections=config.block_con, block_ports=config.block_ports"/>\
 
+  //---------------------------------------------------------------------------
+  // User Clocks
+  //---------------------------------------------------------------------------
+<%include file="/modules/user_clocks.v.mako" args="user_clocks=config.user_clocks"/>\
 
   //---------------------------------------------------------------------------
   // Clock Domains

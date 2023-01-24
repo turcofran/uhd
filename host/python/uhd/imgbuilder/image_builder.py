@@ -210,6 +210,7 @@ class ImageBuilderConfig:
         self.connections = []
         self.clk_domains = []
         self.block_ports = OrderedDict()
+        self.user_clocks = OrderedDict()
         self.io_ports = OrderedDict()
         self.clocks = OrderedDict()
         self.block_con = []
@@ -491,6 +492,10 @@ class ImageBuilderConfig:
         if hasattr(self.device, "clocks"):
             self.clocks.update({
                 ("_device_", clk["name"]): clk for clk in self.device.clocks})
+        # Add user clocks
+        for name, clock in self.user_clocks.items():
+            self.clocks[(name, clock['port_in'])] = {"freq": '[]', "name": clock['port_in']} # Only port for inputs since the wire blkname_clockname
+            self.clocks[(name, clock['port_out'])] = {"freq": '[]', "name": name+'_'+clock['port_out'] }
         # Add the implied clocks for the BSP
         self.clocks[("_device_", "rfnoc_ctrl")] = {"freq": '[]', "name": "rfnoc_ctrl"}
         self.clocks[("_device_", "rfnoc_chdr")] = {"freq": '[]', "name": "rfnoc_chdr"}
@@ -510,7 +515,7 @@ class ImageBuilderConfig:
         connected = [(con["dstblk"], con["dstport"]) for con in self.clk_domain_con]
         unconnected = []
         for clk in self.clocks:
-            if clk[0] != "_device_" and \
+            if (clk[0] != "_device_" and clk[0] not in self.user_clocks) and \
                clk[1] not in ["rfnoc_ctrl", "rfnoc_chdr"] and \
                clk not in connected:
                 unconnected.append(clk)
