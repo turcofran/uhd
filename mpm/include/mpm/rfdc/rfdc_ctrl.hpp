@@ -20,6 +20,25 @@
 namespace mpm { namespace rfdc {
 
 /**
+ * This struct represents the relevant parts of the
+ * XRfdc_PLL_settings.
+ * The enabled boolean is reflected by a matching
+ * enum.
+ * All frequencies and rates are in Hz.
+ * The fractional parts of the struct are ignored.
+ */
+struct rfdc_pll_config
+{
+    enum pll_status : bool { PLL_bypassed = false, PLL_enabled = true };
+    pll_status status;
+    double ref_clk_freq;
+    double sample_rate;
+    uint32_t ref_clk_divider;
+    uint32_t feedback_divider;
+    uint32_t output_divider;
+};
+
+/**
  * A class to control the Xilinx RFdc driver.
  * This will be imported into a MPM shared library.
  */
@@ -118,6 +137,28 @@ public:
      * @param    rfdc_device_id the device ID of the rfdc device
      */
     void init(uint16_t rfdc_device_id);
+
+    /**
+     * Queries enabled state of a given DAC block.
+     *
+     * @param  tile_id  ID of the tile (0..3)
+     * @param  block_id ID of the block within the tile (0..3)
+     * @return          enabled state of block
+     *                  true is an enabled block
+     *                  false is an invalid or disabled block
+     */
+    bool is_dac_enabled(uint32_t tile_id, uint32_t block_id) const;
+
+    /**
+     * Queries enabled state of a given ADC block.
+     *
+     * @param  tile_id  ID of the tile (0..3)
+     * @param  block_id ID of the block within the tile (0..3)
+     * @return          enabled state of block
+     *                  true is an enabled block
+     *                  false is an invalid or disabled block
+     */
+    bool is_adc_enabled(uint32_t tile_id, uint32_t block_id) const;
 
     /**
      * Starts up the requested tile while retaining register values.
@@ -405,6 +446,37 @@ public:
     double get_sample_rate(uint32_t tile_id, uint32_t block_id, bool is_dac);
 
     /**
+     * Configures PLL by passing a reference frequency and a destination sample
+     * rate. Xilinx IP will figure out the best matching PLL settings for the
+     * given parameters. Use `get_pll_config` to query the parameter chosen
+     * by Xilinx IP.
+     *
+     * @param    tile_id the ID of the tile to configure
+     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    source clock source to use could be XRFDC_EXTERNAL_CLK for
+     *           external clock or XRFDC_INTERNAL_PLL_CLK for internal
+     * @param    ref_freq reference frequency to be used
+     * @param    sample_rate target sample rate
+     *
+     * @return   true if the operation was successful
+     */
+    bool configure_pll(uint32_t tile_id,
+        bool is_dac,
+        uint8_t source,
+        double ref_freq,
+        double sample_rate);
+
+    /**
+     * Read the current PLL settings.
+     *
+     * @param   tile_id the ID of the tile to query
+     * @param   block_id the ID of the block to query
+     *
+     * @return  struct containing current PLL configuration
+     */
+    rfdc_pll_config get_pll_config(uint32_t tile_id, bool is_dac);
+
+    /**
      * Specifies the IF for the given ADC or DAC.
      * Setting this will determine the Nyquist zone, mixer mode,
      * Inverse Sinc filter, and mixer NCO frequency.
@@ -579,7 +651,7 @@ public:
      *
      * @return   true if synchronization completed successfully
      */
-    bool sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, uint32_t latency);
+    bool sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, int32_t latency);
 
     /**
      * Get post-sync latency between ADC or DAC tiles
@@ -647,10 +719,20 @@ void export_rfdc(py::module& top_module)
 {
     using namespace mpm::rfdc;
     auto m = top_module.def_submodule("rfdc");
+    py::class_<rfdc_pll_config>(m, "rfdc_pll_config")
+        .def(py::init())
+        .def_readwrite("status", &rfdc_pll_config::status)
+        .def_readwrite("ref_clk_freq", &rfdc_pll_config::ref_clk_freq)
+        .def_readwrite("sample_rate", &rfdc_pll_config::sample_rate)
+        .def_readwrite("ref_clk_divider", &rfdc_pll_config::ref_clk_divider)
+        .def_readwrite("feedback_divider", &rfdc_pll_config::feedback_divider)
+        .def_readwrite("output_divider", &rfdc_pll_config::output_divider);
 
     py::class_<rfdc_ctrl, std::shared_ptr<rfdc_ctrl>>(m, "rfdc_ctrl")
         .def(py::init())
         .def("init", &rfdc_ctrl::init)
+        .def("is_adc_enabled", &rfdc_ctrl::is_adc_enabled)
+        .def("is_dac_enabled", &rfdc_ctrl::is_dac_enabled)
         .def("startup_tile", &rfdc_ctrl::startup_tile)
         .def("shutdown_tile", &rfdc_ctrl::shutdown_tile)
         .def("reset_tile", &rfdc_ctrl::reset_tile)
@@ -673,6 +755,8 @@ void export_rfdc(py::module& top_module)
         .def("enable_inverse_sinc_filter", &rfdc_ctrl::enable_inverse_sinc_filter)
         .def("set_sample_rate", &rfdc_ctrl::set_sample_rate)
         .def("get_sample_rate", &rfdc_ctrl::get_sample_rate)
+        .def("configure_pll", &rfdc_ctrl::configure_pll)
+        .def("get_pll_config", &rfdc_ctrl::get_pll_config)
         .def("set_if", &rfdc_ctrl::set_if)
         .def("set_decimation_factor", &rfdc_ctrl::set_decimation_factor)
         .def("get_decimation_factor", &rfdc_ctrl::get_decimation_factor)
@@ -751,5 +835,9 @@ void export_rfdc(py::module& top_module)
         .value("DIV_4", mpm::rfdc::rfdc_ctrl::DIV_4)
         .value("DIV_8", mpm::rfdc::rfdc_ctrl::DIV_8)
         .value("DIV_16", mpm::rfdc::rfdc_ctrl::DIV_16);
+
+    py::enum_<rfdc_pll_config::pll_status>(m, "pll_status")
+        .value("PLL_bypassed", rfdc_pll_config::PLL_bypassed)
+        .value("PLL_enabled", rfdc_pll_config::PLL_enabled);
 }
 #endif

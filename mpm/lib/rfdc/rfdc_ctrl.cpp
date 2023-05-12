@@ -94,6 +94,16 @@ void rfdc_ctrl::init(uint16_t rfdc_device_id)
     }
 }
 
+bool rfdc_ctrl::is_dac_enabled(uint32_t tile_id, uint32_t block_id) const
+{
+    return XRFdc_IsDACBlockEnabled(rfdc_inst_ptr, tile_id, block_id) == 1;
+}
+
+bool rfdc_ctrl::is_adc_enabled(uint32_t tile_id, uint32_t block_id) const
+{
+    return XRFdc_IsADCBlockEnabled(rfdc_inst_ptr, tile_id, block_id) == 1;
+}
+
 bool rfdc_ctrl::startup_tile(int tile_id, bool is_dac)
 {
     return XRFdc_StartUp(rfdc_inst_ptr, is_dac, tile_id) == XRFDC_SUCCESS;
@@ -476,6 +486,32 @@ double rfdc_ctrl::get_sample_rate(uint32_t tile_id, uint32_t block_id, bool is_d
     return block_status.SamplingFreq * 1e9;
 }
 
+bool rfdc_ctrl::configure_pll(
+    uint32_t tile_id, bool is_dac, uint8_t source, double ref_freq, double sample_rate)
+{
+    // The XRFdc API expects the sample rate / reference freq in MHz
+    return XRFdc_DynamicPLLConfig(
+               rfdc_inst_ptr, is_dac, tile_id, source, ref_freq / 1e6, sample_rate / 1e6)
+           == XRFDC_SUCCESS;
+}
+
+rfdc_pll_config rfdc_ctrl::get_pll_config(uint32_t tile_id, bool is_dac)
+{
+    XRFdc_PLL_Settings settings;
+    rfdc_pll_config result;
+    if (XRFdc_GetPLLConfig(rfdc_inst_ptr, is_dac, tile_id, &settings) != XRFDC_SUCCESS) {
+        throw mpm::runtime_error("Error in RFDC code: Failed to get PLL status");
+    }
+    result.status           = settings.Enabled == 0 ? rfdc_pll_config::PLL_bypassed
+                                                    : rfdc_pll_config::PLL_enabled;
+    result.ref_clk_freq     = settings.RefClkFreq * 1e6;
+    result.sample_rate      = settings.SampleRate * 1e9;
+    result.ref_clk_divider  = settings.RefClkDivider;
+    result.feedback_divider = settings.FeedbackDivider;
+    result.output_divider   = settings.OutputDivider;
+    return result;
+}
+
 bool rfdc_ctrl::set_if(uint32_t tile_id, uint32_t block_id, bool is_dac, double if_freq)
 {
     nyquist_zone_options nyquist_zone;
@@ -625,12 +661,13 @@ void rfdc_ctrl::clear_data_fifo_interrupts(
     }
 }
 
-bool rfdc_ctrl::sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, uint32_t latency)
+bool rfdc_ctrl::sync_tiles(
+    const std::vector<uint32_t>& tiles, bool is_dac, int32_t latency)
 {
     XRFdc_MultiConverter_Sync_Config* sync_config = is_dac ? &rfdc_dac_sync_config
                                                            : &rfdc_adc_sync_config;
-    sync_config->Tiles = 0;
-    sync_config->Target_Latency = latency;
+    sync_config->Tiles                            = 0;
+    sync_config->Target_Latency                   = static_cast<int>(latency);
 
     for (auto tile = tiles.begin(); tile != tiles.end(); ++tile) {
         // sync_config->Tiles is a bitmask, we need to "bump" each bit (0->1)
@@ -640,7 +677,7 @@ bool rfdc_ctrl::sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, uint
 
     return XRFDC_MTS_OK
            == XRFdc_MultiConverter_Sync(
-                  &rfdc_inst, is_dac ? XRFDC_DAC_TILE : XRFDC_ADC_TILE, sync_config);
+               &rfdc_inst, is_dac ? XRFDC_DAC_TILE : XRFDC_ADC_TILE, sync_config);
 }
 
 uint32_t rfdc_ctrl::get_tile_latency(uint32_t tile_index, bool is_dac)
