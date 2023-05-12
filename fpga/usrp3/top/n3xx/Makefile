@@ -67,7 +67,7 @@ TOP ?= n3xx
 # Device: N300, N310, or N320
 # Definitions: See above (*_DEFS)
 # Defaults: See above (*_DEFAULTS)
-vivado_build = make -f Makefile.n3xx.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" $3
+vivado_build = make -f Makefile.n3xx.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" $3 BUILD_BASE_DIR=$(BUILD_BASE_DIR)
 vivado_ip    = make -f Makefile.n3xx.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2" $3
 
 # post_build($1=Device, $2=Option)
