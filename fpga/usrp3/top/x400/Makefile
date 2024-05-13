@@ -297,7 +297,7 @@ X440_IP:      ##Build IP only.
 $(CUSTOM_BUILD_DIR)/build/usrp_x410%.dts: dts/*.dts dts/*.dtsi
 	-mkdir -p $(CUSTOM_BUILD_DIR)/build $(CUSTOM_BUILD_DIR)/dts
 	tools/parse_versions_for_dts.py \
-		--input regmap/versioning_regs_regmap_utils.vh \
+		--input regmap/x410/versioning_regs_regmap_utils.vh \
 		--output $(CUSTOM_BUILD_DIR)/dts/x410-version-info.dtsi \
 		--components fpga,cpld_ifc,db_gpio_ifc,rf_core_100m,rf_core_400m
 	${CC} -o $@ -C -E -I $(CUSTOM_BUILD_DIR)/dts -nostdinc -undef -x assembler-with-cpp -D__DTS__ \
