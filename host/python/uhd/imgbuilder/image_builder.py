@@ -516,8 +516,8 @@ class ImageBuilderConfig:
                 self.clocks[clock_id] = clock
         # Add user clocks
         for name, clock in self.user_clocks.items():
-            self.clocks[name + '.' + clock['port_in']] = {"freq": '[]', "name": clock['port_in']} # Only port for inputs since the wire blkname_clockname
-            self.clocks[name + '.' + clock['port_out']] = {"freq": '[]', "name": name+'_'+clock['port_out'] }
+            self.clocks[name + '.' + clock['port_in']] = {"freq": '[]', "name": clock['port_in'], "direction":'in'} # Only port for inputs since the wire blkname_clockname
+            self.clocks[name + '.' + clock['port_out']] = {"freq": '[]', "name": name+'_'+clock['port_out'], "direction":'out'}
         # Collect clocks from device BSP
         for bsp_clk in getattr(self.device, 'clocks', {}):
             clock_id = "_device_." + bsp_clk["name"]

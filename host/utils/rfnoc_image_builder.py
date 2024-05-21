@@ -212,9 +212,8 @@ def get_config_path():
     block, IO signatures and device bsp).
     :return: Configuration path
     """
-    return os.path.normpath(resolve_path("@CONFIG_PATH@", os.path.join(
-        os.path.dirname(__file__), '..', 'include', 'uhd')))
-
+    # This file will be located at <root>/bin, and the blocks and core dirs will be on <root>/rfnoc, so one level up
+    return os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 
 def main():
     """

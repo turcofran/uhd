@@ -23,7 +23,7 @@
     "required":             ["schema",
                              "chdr_width",
                              "noc_blocks"],
-    "additionalProperties": false,
+    "additionalProperties": true,
 
     "definitions": {
 
@@ -94,7 +94,7 @@
                 ".*": { "$ref": "#/definitions/user_clock" }
             }
         },
-        
+
         "user_clock": {
             "type": "object",
             "properties": {
@@ -104,6 +104,6 @@
             },
             "required": ["ip","port_in","port_out"],
             "additionalProperties": false
-        }        
+        }
     }
 }
