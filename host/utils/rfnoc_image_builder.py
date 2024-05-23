@@ -209,11 +209,15 @@ def get_fpga_path(args):
 def get_config_path():
     """
     Returns path that contains configurations files (yml descriptions for
-    block, IO signatures and device bsp).
+    block, IO signatures and device bsp). It will try first a context where
+    this file is installed at <root>/bin, and the blocks and core dirs are on
+    <root>/rfnoc. Otherwise, it returns the non-installed context
     :return: Configuration path
     """
-    # This file will be located at <root>/bin, and the blocks and core dirs will be on <root>/rfnoc, so one level up
-    return os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
+    cpath = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
+    if os.path.isdir(os.path.join(cpath,'rfnoc/core')):
+        return cpath
+    return os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'include', 'uhd'))
 
 def main():
     """
