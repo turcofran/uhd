@@ -15,7 +15,10 @@
 
 `default_nettype none
 
-module rf_core_200m (
+module rf_core_200m #(
+  parameter ADC_CHAN_EN_MASK = 2'b11,
+  parameter DAC_CHAN_EN_MASK = 2'b11
+)(
 
   //---------------------------------------------------------------------------
   // Clocking
@@ -123,7 +126,10 @@ module rf_core_200m (
 
   wire [ 15:0] dsp_info_sclk_400m;
 
-  rf_core_400m rf_core_400m_i (
+  rf_core_400m  #(
+    .ADC_CHAN_EN_MASK          (ADC_CHAN_EN_MASK),
+    .DAC_CHAN_EN_MASK          (DAC_CHAN_EN_MASK))
+  rf_core_400m_i (
     .rfdc_clk                  (rfdc_clk),
     .rfdc_clk_2x               (rfdc_clk_2x),
     .data_clk                  (data_clk),

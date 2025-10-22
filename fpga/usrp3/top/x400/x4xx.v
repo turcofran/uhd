@@ -732,6 +732,17 @@ module x4xx (
 
   localparam NUM_CHANNELS            = NUM_DBOARDS*NUM_CH_PER_DB;
 
+  `ifdef NUM_RADIOS
+    localparam [NUM_CHANNELS-1:0] CHAN_EN_MASK =
+      `NUM_RADIOS == 4 ? 4'b1111 : // DB0:RF0, DB0:RF1, DB1:RF0, DB1:RF1
+      `NUM_RADIOS == 3 ? 4'b0111 : // DB0:RF0, DB0:RF1, DB1:RF0
+      `NUM_RADIOS == 2 ? 4'b0011 : // DB0:RF0, DB0:RF1
+      `NUM_RADIOS == 1 ? 4'b0001 : // DB0:RF0
+                         4'b0000;
+  `elsif
+    localparam [NUM_CHANNELS-1:0] CHAN_EN_MASK = {NUM_CHANNELS{1'b1}};
+  `endif
+
   // RFDC AXI4-Stream interfaces
   //
   // All these signals/vectors are in the rfdc_clk domain.
@@ -2044,7 +2055,10 @@ module x4xx (
       end else if (RF_CORE == "200M") begin : gen_rf_core_200m
         localparam ADC_AXIS_W = 128;
         localparam DAC_AXIS_W = 256;
-        rf_core_200m rf_core_200m_i (
+        rf_core_200m #(
+          .ADC_CHAN_EN_MASK          (CHAN_EN_MASK[db_i*NUM_CH_PER_DB +: NUM_CH_PER_DB]),
+          .DAC_CHAN_EN_MASK          (CHAN_EN_MASK[db_i*NUM_CH_PER_DB +: NUM_CH_PER_DB]))
+        rf_core_200m_i (
           .rfdc_clk                  (rfdc_clk[0]),
           .rfdc_clk_2x               (rfdc_clk_2x[0]),
           .data_clk                  (data_clk),
@@ -2095,7 +2109,10 @@ module x4xx (
       end else if (RF_CORE == "400M") begin : gen_rf_core_400m
         localparam ADC_AXIS_W = 128;
         localparam DAC_AXIS_W = 256;
-        rf_core_400m rf_core_400m_i (
+        rf_core_400m #(
+          .ADC_CHAN_EN_MASK          (CHAN_EN_MASK[db_i*NUM_CH_PER_DB +: NUM_CH_PER_DB]),
+          .DAC_CHAN_EN_MASK          (CHAN_EN_MASK[db_i*NUM_CH_PER_DB +: NUM_CH_PER_DB]))
+        rf_core_400m_i (
           .rfdc_clk                  (rfdc_clk[0]),
           .rfdc_clk_2x               (rfdc_clk_2x[0]),
           .data_clk                  (data_clk),

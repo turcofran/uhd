@@ -26,7 +26,10 @@
 
 `default_nettype none
 
-module rf_core_400m (
+module rf_core_400m #(
+  parameter ADC_CHAN_EN_MASK = 2'b11,
+  parameter DAC_CHAN_EN_MASK = 2'b11
+)(
 
   //---------------------------------------------------------------------------
   // Clocking
@@ -217,24 +220,31 @@ module rf_core_400m (
   generate
   for (adc_num=0; adc_num < (NUM_ADC_CHANNELS); adc_num = adc_num + 1)
     begin : adc_gen
-      adc_400m_bd adc_400m_bd_gen (
-        .adc_data_out_resetn_dclk (adc_data_out_resetn_dclk),
-        .data_clk                 (data_clk),
-        .enable_data_to_fir_rclk  (adc_enable_data_rclk),
-        .fir_resetn_rclk2x        (fir_resetn_rclk2x),
-        .rfdc_adc_axi_resetn_rclk (adc_rfdc_axi_resetn_rclk),
-        .rfdc_clk                 (rfdc_clk),
-        .rfdc_clk_2x              (rfdc_clk_2x),
-        .swap_iq_2x               (invert_adc_iq_rclk2 [adc_num]),
-        .adc_q_data_in_tvalid     (adc_data_in_q_tvalid[adc_num]),
-        .adc_q_data_in_tready     (adc_data_in_q_tready[adc_num]),
-        .adc_q_data_in_tdata      (adc_data_in_q_tdata [adc_num]),
-        .adc_i_data_in_tvalid     (adc_data_in_i_tvalid[adc_num]),
-        .adc_i_data_in_tready     (adc_data_in_i_tready[adc_num]),
-        .adc_i_data_in_tdata      (adc_data_in_i_tdata [adc_num]),
-        .adc_data_out_tvalid      (adc_data_out_tvalid [adc_num]),
-        .adc_data_out_tdata       (adc_data_out_tdata  [adc_num])
-      );
+      if (ADC_CHAN_EN_MASK[adc_num]) begin
+        adc_400m_bd adc_400m_bd_gen (
+          .adc_data_out_resetn_dclk (adc_data_out_resetn_dclk),
+          .data_clk                 (data_clk),
+          .enable_data_to_fir_rclk  (adc_enable_data_rclk),
+          .fir_resetn_rclk2x        (fir_resetn_rclk2x),
+          .rfdc_adc_axi_resetn_rclk (adc_rfdc_axi_resetn_rclk),
+          .rfdc_clk                 (rfdc_clk),
+          .rfdc_clk_2x              (rfdc_clk_2x),
+          .swap_iq_2x               (invert_adc_iq_rclk2 [adc_num]),
+          .adc_q_data_in_tvalid     (adc_data_in_q_tvalid[adc_num]),
+          .adc_q_data_in_tready     (adc_data_in_q_tready[adc_num]),
+          .adc_q_data_in_tdata      (adc_data_in_q_tdata [adc_num]),
+          .adc_i_data_in_tvalid     (adc_data_in_i_tvalid[adc_num]),
+          .adc_i_data_in_tready     (adc_data_in_i_tready[adc_num]),
+          .adc_i_data_in_tdata      (adc_data_in_i_tdata [adc_num]),
+          .adc_data_out_tvalid      (adc_data_out_tvalid [adc_num]),
+          .adc_data_out_tdata       (adc_data_out_tdata  [adc_num])
+        );
+      end else begin
+        assign adc_data_in_q_tready[adc_num] = 1'b1;
+        assign adc_data_in_i_tready[adc_num] = 1'b1;
+        assign adc_data_out_tvalid [adc_num] = 1'b0;
+        assign adc_data_out_tdata  [adc_num] = 'd0;
+      end
     end
   endgenerate
 
@@ -315,20 +325,26 @@ module rf_core_400m (
   generate
   for (dac_num=0; dac_num < (NUM_DAC_CHANNELS); dac_num = dac_num + 1)
     begin : dac_gen
-      dac_400m_bd dac_400m_bd_gen (
-        .dac_data_in_resetn_dclk   (dac_data_in_resetn_dclk),
-        .dac_data_in_resetn_dclk2x (dac_data_in_resetn_dclk2x),
-        .dac_data_in_resetn_rclk   (dac_data_in_resetn_rclk),
-        .dac_data_in_tdata         (dac_data_in_tdata  [dac_num]),
-        .dac_data_in_tready        (dac_data_in_tready [dac_num]),
-        .dac_data_in_tvalid        (dac_data_in_tvalid [dac_num]),
-        .dac_data_out_tdata        (dac_data_out_tdata [dac_num]),
-        .dac_data_out_tready       (dac_data_out_tready[dac_num]),
-        .dac_data_out_tvalid       (dac_data_out_tvalid[dac_num]),
-        .data_clk                  (data_clk),
-        .data_clk_2x               (data_clk_2x),
-        .rfdc_clk                  (rfdc_clk)
-      );
+      if (DAC_CHAN_EN_MASK[dac_num]) begin
+        dac_400m_bd dac_400m_bd_gen (
+          .dac_data_in_resetn_dclk   (dac_data_in_resetn_dclk),
+          .dac_data_in_resetn_dclk2x (dac_data_in_resetn_dclk2x),
+          .dac_data_in_resetn_rclk   (dac_data_in_resetn_rclk),
+          .dac_data_in_tdata         (dac_data_in_tdata  [dac_num]),
+          .dac_data_in_tready        (dac_data_in_tready [dac_num]),
+          .dac_data_in_tvalid        (dac_data_in_tvalid [dac_num]),
+          .dac_data_out_tdata        (dac_data_out_tdata [dac_num]),
+          .dac_data_out_tready       (dac_data_out_tready[dac_num]),
+          .dac_data_out_tvalid       (dac_data_out_tvalid[dac_num]),
+          .data_clk                  (data_clk),
+          .data_clk_2x               (data_clk_2x),
+          .rfdc_clk                  (rfdc_clk)
+        );
+      end else begin
+        assign dac_data_in_tready[dac_num]  = 1'b1;
+        assign dac_data_out_tvalid[dac_num] = 1'b0;
+        assign dac_data_out_tdata[dac_num]  = 'd0;
+      end
     end
   endgenerate
 
